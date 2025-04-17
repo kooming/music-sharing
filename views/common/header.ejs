@@ -32,15 +32,16 @@
             margin: 0 20px;
             display: flex;
             align-items: center;
+            justify-content: center
         }
         .search-bar input {
-            width: 1100px;
+            width: 100%; /* 이걸로 바꾸기! */
+            max-width: 600px; /* 최대 너비 제한 추가 */
             padding: 8px 12px;
             border: none;
             border-radius: 20px;
             outline: none;
             font-size: 1rem;
-            margin-left: 5vw;
         }
         .nav-buttons {
             display: flex;
@@ -88,6 +89,7 @@
                 <img src="<%= user.properties.profile_image %>" alt="">
                 <%- `${user.properties.nickname}님 환영합니다` %>
                 <a href="/mypage">My Page</a>
+                <a href="/logout">Log out</a>
                 <% } %>
         </div>
         

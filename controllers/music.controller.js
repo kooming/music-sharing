@@ -20,7 +20,7 @@ const musicController = {
         }
     }, async getPopularMusics() {
         try {
-          // 1. Like 테이블에서 music_id별 좋아요 수 집계
+
           const popularLikes = await Like.findAll({
             attributes: ['music_id', [sequelize.fn('COUNT', sequelize.col('music_id')), 'likeCount']],
             group: ['music_id'],
@@ -28,17 +28,15 @@ const musicController = {
             limit: 10
           });
     
-          // 2. 좋아요 많은 순으로 music_id만 추출
           const popularMusicIds = popularLikes.map(like => like.music_id);
     
-          // 3. music_id 리스트로 Music 테이블 조회
           const musics = await Music.findAll({
             where: {
               id: popularMusicIds
             }
           });
     
-          return musics; // ➔ 프론트로 보낼 노래 리스트
+          return musics; // 
         } catch (error) {
           console.error('인기차트 조회 실패:', error);
         }

@@ -1,5 +1,6 @@
 const { Playlist } = require('../models/config')
 const { Music } = require('../models/config')
+const { Like } = require('../models/config')
 
 
 const playlistController = {
@@ -22,8 +23,10 @@ const playlistController = {
         try {
             const playlist = await Playlist.findAll({
                 where: { playlistName },
-                include: [{ model: Music, attributes: ['id', 'songName', 'artist'] }]
+                include: [{ model: Music, attributes: ['id', 'songName', 'artist', 'musicResource', 'songImg'], }],
+                order: [['createdAt', 'ASC']]
             });
+            // console.log('Playlist fetched:', playlist);
             return playlist;
         } catch (error) {
             console.error('Error fetching playlist:', error);
@@ -88,10 +91,49 @@ const playlistController = {
             console.error('Error deleting song from playlist:', error);
             throw error;
         }
+    },
+
+    // async getMusicResource(music_id) {
+    //     try {
+    //         const music = await Music.findOne({
+    //             where: { id: music_id },
+    //             attributes: ['musicResource']
+    //         });
+    //         return music;
+    //     } catch (error) {
+    //         console.error('Error fetching music resource:', error);
+    //         throw error;
+    //     }
+    // }
+
+    // async getMusicResources(playlistName) {
+    //     try {
+    //         const musicReources = await Playlist.findAll({
+    //             where: { playlistName },
+    //             attributes: ['music_id'],
+    //             include: [{ model: Music, attributes: ['musicResource'] }],
+    //             order: [['createdAt', 'ASC']]
+    //         });
+    //         return musicReources;
+    //     } catch (error) {
+    //         console.error('Error fetching music resources:', error);
+    //         throw error;
+    //     }
+    // }
+
+    // 유저 별로 좋아요한 곡의 수 가져오기
+    async getUserLikeCount(userId) {
+        try {
+            const count = await Like.count({
+                where: { user_id: userId }
+            });
+            return count;
+        } catch (error) {
+            console.error('Error fetching user like count:', error);
+            throw error;
+        }
     }
 }
-
-
 
 
 module.exports = playlistController;

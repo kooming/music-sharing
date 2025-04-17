@@ -8,6 +8,7 @@ const path = require('path');
 const { detailRouter, mainRouter, liveRouter, mypageRouter, searchViewRouter ,musicRouter, loginCheck} = require('./routers');
 const Playlist  = require('./models/config'); 
 const cookieParser = require('cookie-parser');
+const { Live } = require('./models/config');
 
 const app = express();
 app.use(express.json());
@@ -21,7 +22,6 @@ app.use("/music", express.static(path.join(__dirname, "public/musics")));
 app.use(cookieParser());
 app.use(loginCheck);
 
-
 app.use('/', mainRouter);
 app.use('/detail', detailRouter);
 app.use('/music', musicRouter);
@@ -34,24 +34,16 @@ if (!fs.existsSync(videosDir)) {
   fs.mkdirSync(videosDir, { recursive: true });
 }
 
-// 서버 열기
 const server = app.listen(3000, () => {
     console.log('http://localhost:3000 서버가 열렸습니다.');
 });
 
-// socket.io 연결
 const io = socketIo(server);
 
-
-// const getLivePlaylistFromDB = async (playlistId) => {
-//     try {
-//         const playlist = await Playlist.findOne({ _id: playlistId });  // 실제 DB에서 플레이리스트 조회
-//         return playlist ? playlist.songs : [];  // 노래 목록 반환
-//     } catch (error) {
-//         console.error(error);
-//         return [];
-//     }
-// };
+let currentSongInfo = null;
+let isHostStreaming = false;
+let streamChunks = [];
+const MAX_CHUNKS = 10;
 
 const onlineUsers = new Set();
 
@@ -65,113 +57,140 @@ io.use((socket, next) => {
     try {
       const userData = jwt.verify(token, process.env.JWT_SECRET_KEY);
       socket.user = userData;
-      console.log('유저 검색 완료',userData);
+      console.log('✅ 유저 검색 완료:', userData);
     } catch (err) {
-      console.error('JWT 검증 실패:', err.message);
+      console.error('❌ JWT 검증 실패:', err.message);
     }
   }
   next();
 });
 
-// socket.io 이벤트 설정
-io.on('connection', (socket) => {
-  const nickName = socket.user?.properties?.nickname;
-  if (nickName) {
-    console.log(`${nickName}님이 접속하셨습니다.`);
-    onlineUsers.add(nickName);
+const broadcasters = {};
+app.locals.broadcasters = broadcasters;
 
-    // 모든 클라이언트에게 접속자 목록 전송
-    io.emit('updateUserList', Array.from(onlineUsers));
+io.on('connection', (socket) => {
+
+  let nickName = socket.user?.properties?.nickname;
+  if (!nickName) {
+    nickName = 'Guest_' + Math.floor(Math.random() * 10000);
   }
 
-    ///////////////////////////////////////////////////////// 성공 
+  socket.nickname = nickName;
+  onlineUsers.add(nickName);
+  console.log(`🟢 ${nickName}님이 접속하셨습니다.`);
 
-     // 역할에 따라 방 입장 및 초기화
-     socket.on("join", (role) => {
-      socket.role = role;
-    
-      // JWT에서 가져온 uid
-      // const uid = socket.user?.id; 
-      // if (!uid) {
-      //   console.log("❌ 유저 정보가 없음");
-      //   return;
-      // }
-      if (role === "viewer") {
-        socket.join("viewers");
-        console.log(`시청자 접속 : views`);
-      } else if (role === "host") {
-        socket.join("hosts");
-        console.log(`호스트 접속 (uid:난데요`);
+  io.emit('updateUserList', Array.from(onlineUsers));
+
+    socket.on("videoChunk", (chunk) => {
+      console.log("청크 수신 크기:", chunk.byteLength);
+      if (!socket.writeStream) {
         const videoFileName = `recorded_video_${Date.now()}.webm`;
         socket.videoFileName = videoFileName;
         socket.videoPath = path.join(videosDir, videoFileName);
-        socket.writeStream = fs.createWriteStream(socket.videoPath, {
-          flags: "a",
-        });
+        socket.writeStream = fs.createWriteStream(socket.videoPath, { flags: "a" });
+      }
+  
+      if (socket.writeStream && socket.writeStream.writable) {
+        if (!socket.writeStream.write(Buffer.from(chunk))) {
+          socket.writeStream.once("drain", () => {
+            console.log("💧 스트림 드레인 완료");
+          });
+        }
+        io.emit("videoChunk", chunk);
       }
     });
-    
-
   
-  // 호스트 영상 청크 처리
-socket.on("videoChunk", (chunk) => {
-  console.log("11234")
-  if (
-    socket.role === "host" &&
-    socket.writeStream &&
-    socket.writeStream.writable
-  ) {
-    if (!socket.writeStream.write(Buffer.from(chunk))) {
-      socket.writeStream.once("drain", () => {
-        console.log("스트림 드레인 완료.");
+    socket.on("endRecording", async () => {
+        if (socket.writeStream) {
+          socket.writeStream.end(async () => {
+            console.log(`🎥 비디오 저장 완료: ${socket.videoPath}`);
+      
+            const relativeUrl = `/public/videos/${socket.videoFileName}`;
+      
+            try {
+              await Live.create({
+                live_url: relativeUrl,
+                user_id: socket.user.id,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+              console.log("📦 live 테이블에 녹화정보 저장 완료!");
+            } catch (err) {
+              console.error("❌ live 테이블 저장 실패:", err);
+            }
+      
+            socket.emit("videoSaved", { fileName: socket.videoFileName });
+      
+            io.emit("broadcastEnded", {
+              message: `${socket.nickname || '호스트'}님의 방송이 종료되었습니다.`,
+              nickname: socket.nickname || '호스트'
+            });
+      
+            io.emit("endRecording");
+          });
+        }
       });
-    }
-    io.to("viewers").emit("videoChunk", chunk);
-  }
-});
+      
 
-  // 녹화 종료 처리
-  socket.on("endRecording", () => {
+  socket.on("sendMessage", (message) => {
+    try {
+      console.log("받은 메시지:", message);
+      io.emit("receiveMessage", message);
+    } catch (err) {
+      console.error("sendMessage 처리 오류:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    if (socket.nickname) {
+      onlineUsers.delete(socket.nickname);
+      console.log(`${socket.nickname}님이 퇴장하셨습니다.`);
+      io.emit("updateUserList", Array.from(onlineUsers));
+    }
+
     if (socket.role === "host" && socket.writeStream) {
       socket.writeStream.end(() => {
-        console.log(`비디오 저장 완료: ${socket.videoPath}`);
-        socket.emit("videoSaved", { fileName: socket.videoFileName });
-        io.to("viewers").emit("endRecording");
+        console.log("강제 종료된 호스트 스트림 종료");
       });
     }
   });
 
-  ///////////////////////////////////////////////////////// 드디어 됌.
-    // 클라이언트가 메시지 전송
-    socket.on('sendMessage', (message) => {
-      try {
-        console.log('받은 메시지:', message);
-        io.emit('receiveMessage', message);
-      } catch (err) {
-        console.error('sendMessage 처리 중 오류:', err);
-      }
+
+
+    socket.on('broadcaster', (broadcastId) => {
+      broadcasters[broadcastId] = socket.id;
+      socket.broadcast.emit('broadcaster', broadcastId);
     });
-
-
-
-
-    socket.on('disconnect', () => {
-      if (nickName) {
-        onlineUsers.delete(nickName);
-        console.log(`${nickName}님이 퇴장하셨습니다.`);
   
-        // 업데이트된 접속자 목록 전송
-        io.emit('updateUserList', Array.from(onlineUsers));
+    socket.on('watcher', (broadcastId) => {
+      const broadcasterId = broadcasters[broadcastId];
+      if (broadcasterId) {
+        io.to(broadcasterId).emit('watcher', socket.id);
       }
-      if (socket.role === "host" && socket.writeStream) {
-        socket.writeStream.end(() => {
-          console.log("강제 종료된 호스트 스트림 종료");
-        });
+    });
+  
+    socket.on('offer', (id, message) => {
+      io.to(id).emit('offer', socket.id, message);
+    });
+  
+    socket.on('answer', (id, message) => {
+      io.to(id).emit('answer', socket.id, message);
+    });
+  
+    socket.on('candidate', (id, message) => {
+      io.to(id).emit('candidate', socket.id, message);
+    });
+  
+    socket.on('disconnect', () => {
+      for (const [broadcastId, id] of Object.entries(broadcasters)) {
+        if (id === socket.id) {
+          delete broadcasters[broadcastId];
+          socket.broadcast.emit('broadcaster_closed', broadcastId);
+          break;
+        }
       }
+      socket.broadcast.emit('disconnectPeer', socket.id);
     });
 });
 
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('unhandledRejection:', reason);
-});
+module.exports = { io, broadcasters };

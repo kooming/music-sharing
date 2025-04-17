@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/public/css/replay.css">
+</head>
+<body>
+  <%- include('common/header') %>
+<div class="container">
+  <% if (video) { %>
+    <div class="video-info"><%= video.formattedDate %> 다시보기</div>
+    <div class="video-container">
+      <video controls>
+        <source src="<%= video.live_url %>" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  <% } else { %>
+    <p class="no-video">비디오를 찾을 수 없습니다.</p>
+  <% } %>
+</div>
+<footer>
+  <div class="footer-content">
+    <div>© 2025 구이김&뮤직스. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="/about">회사 소개</a>
+      <a href="/terms">이용약관</a>
+      <a href="/privacy">개인정보처리방침</a>
+      <a href="/contact">고객지원</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

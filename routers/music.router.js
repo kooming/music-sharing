@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const {musicController,likeController,playlistController} = require('../controllers');
 
-// 음악 하나 조회하는 API
+
 router.get('/:id', async (req, res) => {
     try {
         const { id: musicId } = req.params;
@@ -19,7 +19,7 @@ router.get('/:id', async (req, res) => {
             
             res.json({
                 music: musicFind,
-                liked, // 좋아요 여부 true/false로 보냄
+                liked, 
                 musicList
             });
         } else {
@@ -47,14 +47,13 @@ router.post('/:id/like', async (req,res)=> {
 router.get('/:id/likecheck', async (req, res) => {
   try {
     const { id } = req.params;
-    const  { id :uid}  = req.user || {}; // 로그인된 사용자 정보
+    const  { id :uid}  = req.user || {}; 
     if (!uid) {
-      return res.json({ liked: false }); // 비로그인일 경우 무조건 좋아요 false
+      return res.json({ liked: false }); 
     }
 
     const { likeCheckMusic } = await likeController.likeUserMusic(id, uid);
 
-    // 🎯 좋아요 기록이 하나라도 있으면 true
     const liked = likeCheckMusic && likeCheckMusic.length > 0;
     
     res.json({ liked });

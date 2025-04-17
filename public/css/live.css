@@ -107,6 +107,7 @@ a {
 
 .stream-info {
     padding: 20px;
+    min-height: 150px;
 }
 
 .live-indicator {
@@ -240,7 +241,9 @@ a {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 400px;
+    height: 330px;
+    margin-left: 10px;
+    margin-bottom: 10px;
 }
 
 .chat-header {
@@ -255,28 +258,47 @@ a {
     padding: 15px;
     overflow-y: auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: column;  /* 세로로 쌓기 */
     gap: 10px;
 }
 
+/* 모든 메시지에 대한 기본 스타일 */
 .chat-message {
-    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+    padding: 8px;
     border-radius: 10px;
-    background: #f0f2ff;
-    max-width: 80%;
+    word-wrap: break-word;
+    margin: 5px 0;
 }
 
-.chat-message.own {
+/* 내가 보낸 메시지는 오른쪽 */
+.chat-message.my-message {
     background: #e6e9ff;
-    align-self: flex-end;
+    align-self: flex-end;  /* 오른쪽 정렬 */
+    text-align: right;
 }
 
+/* 다른 사람이 보낸 메시지는 왼쪽 */
+.chat-message.other-message {
+    background: #a7f5d7;
+    align-self: flex-start;  /* 왼쪽 정렬 */
+    text-align: left;
+}
+
+/* 보낸 사람의 이름 스타일 */
 .user-name {
     font-weight: bold;
     margin-bottom: 5px;
     color: #4e54c8;
 }
 
+.message-text {
+    font-size: 14px;
+}
+
+/* 채팅 입력 부분 */
 .chat-input {
     display: flex;
     padding: 10px;
@@ -306,11 +328,14 @@ a {
     background: #3a3f9e;
 }
 
+
 .online-users {
+    height: 240px;
     background: white;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(78, 84, 200, 0.1);
     overflow: hidden;
+    margin-left: 10px;
 }
 
 .online-header {
@@ -360,29 +385,6 @@ a {
     background-color: #4CAF50;
     margin-right: 5px;
 }
-
-
-footer {
-    margin-top: 50px;
-    padding: 20px;
-    background: linear-gradient(90deg, #4e54c8, #8f94fb);
-    color: white;
-    text-align: center;
-}
-
-.footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.footer-links {
-    display: flex;
-    gap: 20px;
-}
-
-
 @media (max-width: 768px) {
     .live-interaction {
         grid-template-columns: 1fr;
@@ -397,3 +399,120 @@ display: flex;
 align-items: flex-start;  
 gap: 20px; 
 }
+
+.video-list-wrapper {
+    width: 80%;
+    display: flex;
+    align-items: center;
+    height: 220px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: #f9f9f9;
+    padding: 10px;
+    margin-left: 85px
+  }
+  
+  .video-list-wrapper ul {
+    display:  flex;
+  }
+  .video-list {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;                /* 아이템 사이 간격 */
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  
+  .video-item {
+    flex: 0 0 auto;
+    width: 180px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    margin-right: 10px;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .video-item img {
+    width: 100%;
+    height: 100px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+  
+  
+  .error-alert {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background-color: #ff3e3e;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    text-align: center;
+}
+
+.error-alert.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* ----------------------------------------- */
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    margin: 5px 10px;
+    max-width: 70%;
+    padding: 8px;
+    border-radius: 10px;
+  }
+  
+  .my-message {
+    background-color: #dcf8c6;
+    border-top-right-radius: 0;
+    align-self: flex-end;  /* 오른쪽 정렬 */
+    text-align: right;
+  }
+  
+  
+  .other-message {
+    background-color: #fff;
+    border-top-left-radius: 0;
+    align-self: flex-start;  /* 왼쪽 정렬 */
+    text-align: left;
+  }
+  
+  .user-name {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 3px;
+  }
+  
+  .message-text {
+    font-size: 14px;
+    word-break: break-word;
+  }
+
+  .featured-video {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  #main-stream {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }

@@ -1,207 +1,97 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>구이김&뮤직스 - 실시간 스트리밍</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" href="/public/css/live.css">
-  <style>
-    .featured-video {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>구이김&뮤직스 - 실시간 스트리밍</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/public/css/live.css" />
+  </head>
+  <body>
+    <%- include('common/header') %>
+    <div class="container">
+      <h1 class="page-title">실시간 스트리밍</h1>
+      <div  style="display: flex; margin-left: 80px">
+        <div>
+          <div class="featured-stream">
+            <div class="featured-stream-content">
+              <div class="featured-video">
+                <video id="main-stream" autoplay controls playsinline></video>
+                <div
+                  style="
+                    position: absolute;
+                    bottom: 10px;
+                    left: 10px;
+                    background: rgba(0, 0, 0, 0.5);
+                    padding: 6px;
+                    border-radius: 8px;
+                  "
+                >
+                  <input
+                    type="range"
+                    id="volumeSlider"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="1"
+                  />
+                </div>
+              </div>
+              <div class="stream-info">
+                <span class="live-indicator">LIVE</span>
+                <h2 class="stream-title" id="stream-title">라이브 방송</h2>
+                <p class="stream-artist" id="stream-artist">방송 중입니다...</p>
 
-    #main-stream {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  </style>
-</head>
-<body>
-  <%- include('common/header') %>
-  <div class="container">
-    <h1 class="page-title">실시간 스트리밍</h1>
-    <div style="display: flex; margin-left: 80px;">
-      <div>
-        <div class="featured-stream">
-          <div class="featured-stream-content">
-            <div class="featured-video">
-              <video id="main-stream" autoplay playsinline></video>
-              <div style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.5); padding: 6px; border-radius: 8px;">
-                <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
               </div>
             </div>
-            <div class="stream-info">
-              <span class="live-indicator">LIVE</span>
-              <h2 class="stream-title" id="stream-title">라이브 방송</h2>
-              <p class="stream-artist" id="stream-artist">방송 중입니다...</p>
+          </div>
+        </div>
+        <div class="live-interaction">
+          <div class="chat-section">
+            <div class="chat-header">실시간 채팅</div>
+            <div class="chat-messages" id="chat-box"></div>
+            <div class="chat-input">
+              <input type="text" placeholder="메시지를 입력하세요..." />
+              <button>전송</button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="live-interaction">
-        <div class="chat-section">
-          <div class="chat-header">실시간 채팅</div>
-          <div class="chat-messages" id="chat-box"></div>
-          <div class="chat-input">
-            <input type="text" placeholder="메시지를 입력하세요...">
-            <button>전송</button>
+          <div class="online-users">
+            <div class="online-header">접속자</div>
+            <div class="user-list"></div>
           </div>
         </div>
-        <div class="online-users">
-          <div class="online-header">접속자</div>
-          <div class="user-list"></div>
-        </div>
-      </div>
     </div>
+    <% if (recordedVideos.length > 0) { %>
+      <div class="video-list-wrapper">
+        <ul style="list-style: none; padding: 0;">
+          <% recordedVideos.forEach(function(video) { %>
+            <li class="video-item">
+              <img src="../public/images/logo_seaweed.png" alt="썸네일">
+              <div>
+                <h3><%= video.title %></h3>
+                <p><%= video.formattedDate %> 다시보기</p>
+                <a href="/live/replay/<%= video.id %>">▶ 다시보기</a>
+              </div>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } else { %>
+      <p>현재 녹화된 비디오가 없습니다.</p>
+    <% } %>
   </div>
-
-  <footer>
-    <div class="footer-content">
-      <div>© 2025 구이김&뮤직스. All rights reserved.</div>
-      <div class="footer-links">
-        <a href="/about">회사 소개</a>
-        <a href="/terms">이용약관</a>
-        <a href="/privacy">개인정보처리방침</a>
-        <a href="/contact">고객지원</a>
-      </div>
+  <% if (user) { %>
+    <div id="user-info"
+         data-id="<%= user.id %>"
+         data-nickname="<%= user.properties.nickname %>">
     </div>
-  </footer>
-  <script>
-    const videoElement = document.getElementById('main-stream');
-    const socket = io();
-  
-    // 오디오 관련 설정
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    let gainNode;
-    let audioSource;
-  
-    // MediaSource 초기화
-    const mediaSource = new MediaSource();
-    videoElement.src = URL.createObjectURL(mediaSource);
-  
-    let sourceBuffer;
-    let chunkQueue = [];
-  
-    mediaSource.addEventListener('sourceopen', () => {
-      if (MediaSource.isTypeSupported('video/webm; codecs="vp9,opus"')) {
-        sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp9,opus"');
-  
-        sourceBuffer.addEventListener('updateend', () => {
-          if (chunkQueue.length > 0 && !sourceBuffer.updating) {
-            const nextChunk = chunkQueue.shift();
-            try {
-              sourceBuffer.appendBuffer(nextChunk);
-            } catch (e) {
-              console.error('appendBuffer 에러 (큐에서):', e);
-            }
-          }
-        });
-  
-        socket.on('videoChunk', (chunk) => {
-          const reader = new FileReader();
-          reader.onload = function () {
-            const buffer = new Uint8Array(this.result);
-            if (sourceBuffer.updating || chunkQueue.length > 0) {
-              chunkQueue.push(buffer);
-            } else {
-              try {
-                sourceBuffer.appendBuffer(buffer);
-              } catch (e) {
-                console.error('appendBuffer 에러:', e);
-                chunkQueue.push(buffer); // 실패 시 큐에 다시 저장
-              }
-            }
-          };
-          if (chunk instanceof Blob) {
-            reader.readAsArrayBuffer(chunk);
-          } else {
-            reader.readAsArrayBuffer(new Blob([chunk]));
-          }
-        });
-  
-        // 영상 재생 시 오디오 설정
-        videoElement.addEventListener('play', () => {
-          if (!gainNode) {
-            const stream = videoElement.captureStream();
-            const audioTracks = stream.getAudioTracks();
-            if (audioTracks.length > 0) {
-              const audioStream = new MediaStream([audioTracks[0]]);
-              audioSource = audioContext.createMediaStreamSource(audioStream);
-              gainNode = audioContext.createGain();
-              audioSource.connect(gainNode).connect(audioContext.destination);
-            }
-          }
-        });
-  
-        // 볼륨 슬라이더
-        const volumeSlider = document.getElementById('volumeSlider');
-        volumeSlider.addEventListener('input', () => {
-          if (gainNode) {
-            gainNode.gain.value = parseFloat(volumeSlider.value);
-          }
-        });
-  
-        socket.on('endRecording', () => {
-          console.log('🎬 방송이 종료되었습니다.');
-          if (mediaSource.readyState === 'open') {
-            try {
-              mediaSource.endOfStream();
-            } catch (e) {
-              console.warn('endOfStream 실패:', e);
-            }
-          }
-        });
-  
-      } else {
-        console.error('지원되지 않는 미디어 형식입니다.');
-      }
-    });
-  
-    // 채팅 기능
-    const chatInput = document.querySelector('.chat-input input');
-    const chatButton = document.querySelector('.chat-input button');
-    const chatBox = document.getElementById('chat-box');
-  
-    function sendMessage() {
-      const message = chatInput.value.trim();
-      if (message !== '') {
-        socket.emit('sendMessage', message);
-        chatInput.value = '';
-      }
-    }
-  
-    chatButton.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-  
-    socket.on('receiveMessage', (message) => {
-      const messageElement = document.createElement('div');
-      messageElement.className = 'chat-message';
-      messageElement.innerHTML = `
-        <div class="user-name">나</div>
-        <div class="message-text">${message}</div>
-      `;
-      chatBox.appendChild(messageElement);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-  
-    // 접속자 목록
-    socket.on('updateUserList', (userList) => {
-      const userListDiv = document.querySelector('.user-list');
-      userListDiv.innerHTML = '';
-      userList.forEach((user) => {
-        const userItem = document.createElement('div');
-        userItem.textContent = `👤 접속`;
-        userItem.className = 'user-item';
-        userListDiv.appendChild(userItem);
-      });
-    });
-  </script>
-</body>
+  <% } else { %>
+    <div id="user-info"
+         data-id=""
+         data-nickname="비회원">
+    </div>
+  <% } %>
+  </body>
+  <%- include('common/footer')%>
+  <script src="/public/JS/viewers.js"></script>
 </html>

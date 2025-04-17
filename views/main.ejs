@@ -1,117 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구이김&뮤직스</title>
-    <link rel="stylesheet" href="/public/css/main.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>구이김&뮤직스</title>
+  <link rel="stylesheet" href="/public/css/main.css">
 
 </head>
-<body>
-    <%- include("common/header") %>
-   <div class="content-form">
 
-       <div class="Streaming">
-           
-    </div>
-    <div class="music">
-      <div class="music-move">
-        <div>추천곡</div>
-        <a href="/detail">전체곡 보기</a>
+<body>
+  <%- include("common/header") %>
+    <div class="content-form">
+      <div class="Streaming">
+        <% for(let i=0; i < livePlaylists.length; i++) { %>
+          <% const playlist=livePlaylists[i]; %>
+            <% const broadcastId=liveIds[i]; %>
+              <div class="live-playlist">
+                <img src="/public/images/logo_seaweed.png" alt="Live Logo" class="live-logo">
+                <h3>
+                  <%= playlist.playlistName %>
+                </h3>
+                <p>현재 방송 중</p>
+                <a
+                  href="/live/viewers?playlistName=<%= encodeURIComponent(playlist.playlistName) %>&broadcastId=<%= broadcastId %>">
+                  <button>시청하기</button>
+                </a>
+              </div>
+              <% } %>
       </div>
-        <% for(let i =0; i < musicList.length; i++){ %>
-            <div class="music-form" data-id="<%= musicList[i].id %>">
-                <img src="/public/images/musicimages/<%= musicList[i].songImg %>" alt="">
-                <div><%= musicList[i].artist %></div>
-                <div><%= musicList[i].songName %></div>
+      <div class="music">
+        <div class="music-move">
+          <div>추천곡</div>
+          <a href="/detail">전체곡 보기</a>
+        </div>
+        <% for(let i=0; i < musicList.length; i++){ %>
+          <div class="music-form" data-id="<%= musicList[i].id %>">
+            <img src="/public/images/musicimages/<%= musicList[i].songImg %>" alt="">
+            <div>
+              <%= musicList[i].artist %>
             </div>
-        <% } %>
-    </div>
-    <div class="right-form">
+            <div>
+              <%= musicList[i].songName %>
+            </div>
+          </div>
+          <% } %>
+      </div>
+      <div class="right-form">
 
         <div class="login">
-            <% if(!user){ %>
+          <% if(!user){ %>
             <div class="login-form">
-                <h2>카카오톡 로그인</h2>
-                <a href="/login">
-                    <img src="/public/images/kakaologin.png" class="kakao-img" alt="">
-                </a>
+              <h2>구이김&뮤직스 로그인</h2>
+              <a href="/login">
+                <img src="/public/images/kakaologin.png" class="img" alt="">
+              </a>
+              <img src="/public/images/googlelogin.png" class="img google" alt="">
             </div>
             <% }else{ %>
-            <div class="logout-form">
-                <h2>카카오톡 로그아웃</h2>
-                <a href="/logout">
-                    <img src="/public/images/kakaologout.png" class="kakao-img" alt="">
-                </a>
-            </div>
-            <% } %>
+              <div class="logout-form login-active">
+                <div class="list">
+                  <div>
+                    🎵 <%- `Liked Songs : ${user.likeCount}` %>
+                  </div>
+                  <div>
+                    💜 <%- `Playlists : ${user.playListCount}` %>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="profile_wrap">
+                    <img src="<%= user.properties.profile_image %>" class="login-img" alt="">
+                    <div>
+                      <div id="title">Artist</div>
+                      <%- `${user.properties.nickname}님` %>
+                      <div>환영합니다</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <% } %>
         </div>
         <div id="mini-chart">
           <h3>인기차트 🔥</h3>
-          <% for(let i =0; i < plainChatList.length; i++){ %>
-          <div class="mini-chart-item" data-id="<%= plainChatList[i].id %>" >
-            <%= i+1 %>. <%= plainChatList[i].artist %> - <%= plainChatList[i].songName %>
-          </div>
+          <% for(let i=0; i < plainChatList.length; i++){ %>
+            <div class="mini-chart-item" data-id="<%= plainChatList[i].id %>">
+              <%= i+1 %>. <%= plainChatList[i].artist %> - <%= plainChatList[i].songName %>
+            </div>
             <% } %>
 
         </div>
-    </div>
-    
-<!-- 숨긴 오디오 -->
-<audio id="audio" src="" style="display: none;"></audio>
-
-<!-- 커스텀 플레이어 -->
-<div id="custom-player">
-  <!-- 왼쪽: 앨범 커버 + 노래 정보 -->
-  <div class="player-left">
-    <img id="player-img" src="" alt="앨범 커버">
-    <div class="player-info">
-      <div id="player-title"></div>
-      <div id="player-artist"></div>
-    </div>
-  </div>
-
-  <!-- 중앙: 재생버튼 + 진행바 + 현재시간/총시간 -->
-  <div class="player-center">
-    <div class="player-buttons">
-      <button id="prev-btn">⏮️</button>
-      <button id="play-pause-btn">▶️</button>
-      <button id="next-btn">⏭️</button>
-    </div>
-    <div class="player-bar">
-      <input type="range" id="seek-bar" value="0" min="0" max="100">
-      <div class="time-info">
-        <span id="current-time">0:00</span> / <span id="duration">0:00</span>
       </div>
-    </div>
-  </div>
+      <audio id="audio" src="" style="display: none;"></audio>
+      <div id="custom-player">
+        <div class="player-left">
+          <img id="player-img" src="" alt="앨범 커버">
+          <div class="player-info">
+            <div id="player-title"></div>
+            <div id="player-artist"></div>
+          </div>
+        </div>
+        <div class="player-center">
+          <div class="player-buttons">
+            <button id="prev-btn">⏮️</button>
+            <button id="play-pause-btn">▶️</button>
+            <button id="next-btn">⏭️</button>
+          </div>
+          <div class="player-bar">
+            <input type="range" id="seek-bar" value="0" min="0" max="100">
+            <div class="time-info">
+              <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+            </div>
+          </div>
+        </div>
+        <div class="player-right">
+          <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="0.5">
+          <button id="like-button">🤍</button>
+          <button id="plus-button">+</button>
+        </div>
+      </div>
+      <div id="playlist-modal">
+        <div id="modal-content">
 
-  <!-- 오른쪽: 좋아요 버튼 + 볼륨 + 메뉴 버튼 -->
-  <div class="player-right">
-    <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="0.5">
-    <button id="like-button">🤍</button>
-    <button id="plus-button">+</button>
-  </div>
-</div>
-<!-- 모달창 기본 구조 추가 -->
-<div id="playlist-modal">
-  <div id="modal-content">
-    
-  </div>
-</div>
-<!-- 새 플레이 리스트 추가 모달 (숨김 기본) -->
-<div id="new-playlist-modal" class="playlist-modal" style="display: none;">
-  <div id="new-playlist-content" class="playlist-modal-content">
-    <h2>새 플레이 리스트 만들기</h2>
-    <input type="text" id="new-playlist-name" placeholder="플레이 리스트 이름 입력" class="playlist-input" />
-    <div class="modal-buttons">
-      <button id="create-playlist-btn" class="confirm-button">만들기</button>
-      <button id="cancel-create-btn" class="cancel-button">취소</button>
-    </div>
-  </div>
-</div>
+        </div>
+      </div>
+      <div id="new-playlist-modal" class="playlist-modal" style="display: none;">
+        <div id="new-playlist-content" class="playlist-modal-content">
+          <h2>새 플레이 리스트 만들기</h2>
+          <input type="text" id="new-playlist-name" placeholder="플레이 리스트 이름 입력" class="playlist-input" />
+          <div class="modal-buttons">
+            <button id="create-playlist-btn" class="confirm-button">만들기</button>
+            <button id="cancel-create-btn" class="cancel-button">취소</button>
+          </div>
+        </div>
+      </div>
 
 
 </body>
 <script src="/public/JS/main.js"></script>
+
 </html>

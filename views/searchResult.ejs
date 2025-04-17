@@ -4,10 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Search Result</title>
-  <link rel="stylesheet" href="../public//css/search.css" />
+  <link rel="stylesheet" href="/public/css/search.css" />
 </head>
 <body>
   <%- include('common/header') %>
+  <div id="search_container">
   <div id="search_form">
     <% if (results.length > 0) { %>
       <div class="search-header">
@@ -15,24 +16,65 @@
         <div class="header-title">노래 제목</div>
         <div class="header-artist">아티스트</div>
       </div>
-      <% results.forEach(music => { %>
+      <% for (let i = 0; i < results.length; i++) { %>
         <div class="music-item">
           <div class="music-img">
-            <img src="/public/images/<%= music.songImg %>" alt="Album Cover" />
+            <img src="/public/images/musicimages/<%= results[i].songImg %>" alt="Album Cover" />
           </div>
-          <div class="music-info">
-            <a href="#"><%= music.songName %></a>
+          <div class="music-form" data-id="<%= results[i].id %>">
+            <div><%= results[i].songName %></div>
           </div>
           <div class="music-artist">
-            <%= music.artist %>
+            <%= results[i].artist %>
           </div>
         </div>
-      <% }) %>
-    <% } else { %>
-      <p style="text-align: center; padding: 20px;">검색 결과가 없습니다.</p>
-    <% } %>
+      <% } %>
+      <div class="pagination">
+        <% if (currentPage > 1) { %>
+          <a href="?index=<%= searchQuery %>&page=<%= currentPage - 1 %>">이전</a>
+        <% } %>
+        <% for (let i = 1; i <= totalPages; i++) { %>
+          <% if (i === currentPage) { %>
+            <span class="current"><%= i %></span>
+          <% } else { %>
+            <a href="?index=<%= searchQuery %>&page=<%= i %>"><%= i %></a>
+          <% } %>
+        <% } %>
+        <% if (currentPage < totalPages) { %>
+          <a href="?index=<%= searchQuery %>&page=<%= currentPage + 1 %>">다음</a>
+        <% } %>
+      </div>
+      <% } else { %>
+        <p style="text-align: center; padding: 20px;">검색 결과가 없습니다.</p>
+        <% } %>
+      </div>
+    </div>
+  <audio id="audio" src="" style="display: none;"></audio>
+
+<!-- 커스텀 플레이어 -->
+<div id="custom-player">
+  <div class="player-left">
+    <img id="player-img" src="" alt="앨범 커버">
+    <div class="player-info">
+      <div id="player-title">노래 제목</div>
+      <div id="player-artist">가수 이름</div>
+    </div>
+    <div class="player-times">
+      <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+    </div>
   </div>
+  <div class="player-center">
+    <button id="play-pause-btn">▶️</button>
+    <input type="range" id="seek-bar" value="0" min="0" max="100">
+    <div class="player-menu">
+      <button id="menu-button">⋮</button> <!-- 점 세개 버튼 추가 -->
+    </div>
+  </div>
+    <div class="player-like">
+      <button id="like-button">🤍</button>
+    </div>
+</div>
 </body>
-<script>
-</script>
+<%- include('common/footer')%>
+<script src="../public/JS/main.js"></script>
 </html>

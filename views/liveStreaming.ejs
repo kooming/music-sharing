@@ -11,23 +11,25 @@
     video::-webkit-media-controls-pause-button {
       display: none;
     }
+
     video::-moz-media-controls {
       display: none;
     }
-  .featured-video {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
 
-#hostCanvas, #main-stream {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+    .featured-video {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    #hostCanvas, #main-stream {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   </style>
 </head>
 <body>
@@ -40,26 +42,24 @@
           <div class="featured-stream-content">
             <div class="featured-video">
               <canvas id="hostCanvas"></canvas>
-              <video id="main-stream" controls style="width:100%; height:100%; object-fit:cover;"></video>
+              <video id="main-stream" controls style="width:100%; display: none; height:100%; object-fit:cover;"></video>
             </div>
             <div class="stream-info">
               <span class="live-indicator">LIVE</span>
-              <div id="stream-nick">호스트 :</div>
+              <div id="stream-nick">호스트 : <%= user.properties.nickname %></div>
               <h2 class="stream-title" id="stream-title">곡 제목 로딩 중...</h2>
               <p class="stream-artist" id="stream-artist">아티스트 정보</p>
-              <button id="startRecording">녹화 시작</button>
+              <button id="startRecording" >녹화 시작</button>
               <button id="stopRecording" style="display: none">녹화 중지</button>
             </div>
           </div>
         </div>
-
         <div class="media-controls">
+          <audio id="audio"  controls style="position: relative; z-index: 10; width: 400px;"></audio>
           <div class="playback-controls">
-            <button id="prevBtn">⏮</button>
-            <button id="rewindBtn">⏪</button>
+       
             <button class="play-button">⏸</button>
-            <button id="fastForwardBtn">⏩</button>
-            <button id="nextBtn">⏭</button>
+ 
           </div>
           <div class="volume-control">
             <span>🔊</span>
@@ -67,9 +67,12 @@
           </div>
         </div>
       </div>
-
+      <div id="user-info"
+        data-id="<%= user.id %>"
+        data-nickname="<%= user.properties.nickname %>">
+      </div>
       <div class="live-interaction">
-        <div class="chat-section">
+        <div class="chat-section"  style="height: 400px;">
           <div class="chat-header">실시간 채팅</div>
           <div class="chat-messages" id="chat-box"></div>
           <div class="chat-input">
@@ -77,276 +80,33 @@
             <button>전송</button>
           </div>
         </div>
-        <div class="online-users">
+        <div class="online-users" style="height: 280px; overflow-y: auto;">
           <div class="online-header">접속자</div>
           <div class="user-list"></div>
         </div>
       </div>
-    </div>
   </div>
-
-  <footer>
-    <div class="footer-content">
-      <div>© 2025 구이김&뮤직스. All rights reserved.</div>
-      <div class="footer-links">
-        <a href="/about">회사 소개</a>
-        <a href="/terms">이용약관</a>
-        <a href="/privacy">개인정보처리방침</a>
-        <a href="/contact">고객지원</a>
-      </div>
+  <% if (recordedVideos.length > 0) { %>
+    <div class="video-list-wrapper">
+      <ul style="list-style: none; padding: 0;">
+        <% recordedVideos.forEach(function(video) { %>
+          <li class="video-item">
+            <img src="../public/images/logo_seaweed.png" alt="썸네일">
+            <div>
+              <h3><%= video.title %></h3>
+              <p><%= video.formattedDate %>  b 다시보기</p>
+              <a href="/live/replay/<%= video.id %>">▶ 다시보기</a>
+            </div>
+          </li>
+        <% }); %>
+      </ul>
     </div>
-  </footer>
-  <script>
-    const playButton = document.querySelector('.play-button');
-    const videoElement = document.getElementById('main-stream');
-    const titleElement = document.getElementById('stream-title');
-    const artistElement = document.getElementById('stream-artist');
-    const hostniclElement = document.getElementById('stream-nick');
-    const startRecordingBtn = document.getElementById('startRecording');
-    const stopRecordingBtn = document.getElementById('stopRecording');
-    const volumeSlider = document.querySelector('.volume-slider');
-    const hostCanvas = document.getElementById("hostCanvas");
-    const hostCtx = hostCanvas.getContext("2d");
-    const urlParams = new URLSearchParams(window.location.search);
-    const playlistName = urlParams.get('playlistName');
-    const musicId = urlParams.get('musicId');
-    ////////////////////////////////
-    let mediaRecorder;
-    let recordedChunks = [];  
-    ///////////////////////////////
-    let userImage = new Image();
-    let imageLoaded = false;
-    userImage.onload = function() {
-      imageLoaded = true;
-    };
-    let isPlaying = false;
-    let musicdata = [];
-    let currentIndex = 0;
-    let role = null;
-    let socket = io();
-    const chatBubbles = [];
-    
-    function initializeRole(selectedRole) {
-        role = selectedRole;
-        //연결 요청
-        socket = io("http://localhost:3000");
-        socket.emit("join", role);
-      }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-     
-      if (!playlistName) {
-        alert("Missing playlistName in URL");
-        return;
-      }
-      try {
-        const res = await axios.get(`/live/api/musiclist/${encodeURIComponent(playlistName)}`);
-        const allMusic = res.data;
-
-        const filteredMusic = musicId? allMusic.filter(music => music.musicid == musicId): allMusic;
-
-        musicdata = filteredMusic;
-
-        if (!musicdata.length) {
-          alert("재생할 음악이 없습니다.");
-          return;
-        }
-
-        const playNext = () => {
-          if (currentIndex >= musicdata.length) {
-            console.log("모든 트랙 재생 완료");
-            return;
-          }
-          let image = new Image();
-
-          const music = musicdata[currentIndex];
-          videoElement.src = `/public/musics/${music.musicResource}`;
-          imageLoaded = false; 
-          userImage.src = `/public/images/${music.songImg}`; 
-          titleElement.textContent = music.songName || '제목 없음';
-          artistElement.textContent = `아티스트: ${music.artist || '알 수 없음'}`;
-          videoElement.play().catch(error => {
-            console.warn("자동 재생 실패: 사용자 액션이 필요할 수 있음.", error);
-          });
-          currentIndex++;
-        };
-
-        videoElement.addEventListener('ended', playNext);
-        drawHostCanvas(); 
-        playNext();
-
-      } catch (error) {
-        console.error("음악 목록 로딩 실패:", error);
-      }
-    });
-
-    function drawHostCanvas() {
-    
-    hostCtx.clearRect(0, 0, hostCanvas.width, hostCanvas.height);
-    if (imageLoaded) {
-      hostCtx.drawImage(userImage, 0, 0, hostCanvas.width, hostCanvas.height);
-    } else {
-      hostCtx.fillStyle = "black";
-      hostCtx.fillRect(0, 0, hostCanvas.width, hostCanvas.height);
-    }
-    for (let i = chatBubbles.length - 1; i >= 0; i--) {
-    const bubble = chatBubbles[i];
-
-    bubble.y -= bubble.dy;        
-    bubble.alpha -= 0.001;         
-
-    if (bubble.alpha <= 0) {
-      chatBubbles.splice(i, 1);   
-      continue;
-    }
-
-    hostCtx.globalAlpha = bubble.alpha;
-    hostCtx.fillStyle = "#FFF"; // 완전한 검정
-    hostCtx.font = "8px";
-    hostCtx.fillText(bubble.text, bubble.x, bubble.y);
-    hostCtx.globalAlpha = 1.0;
-    }
-
-      requestAnimationFrame(drawHostCanvas); 
-      }
-
-      /////////////////////////////////////////////////////////////////////// 개발중 start , stop  라이브 
-   startRecordingBtn.addEventListener("click", () => {
-        axios.post('/live/update', {
-        islive: true,
-        playlistName 
-      }).then(() => {
-        startRecordingBtn.style.display = 'none';
-        stopRecordingBtn.style.display = 'inline-block';
-      });
-        recordedChunks = [];
-
-      initializeRole("host");
-
-      const videoStream = hostCanvas.captureStream(30);
-      let combinedStream = new MediaStream(videoStream.getVideoTracks());
-
-      if (videoElement && !videoElement.paused) {
-        const musicStream = videoElement.captureStream();
-        const audioTracks = musicStream.getAudioTracks();
-        audioTracks.forEach((track) => combinedStream.addTrack(track));
-      }
-      alert('성공')
-
-      mediaRecorder = new MediaRecorder(combinedStream, {
-        mimeType: "video/webm; codecs=vp9,opus",
-      });
-
-      mediaRecorder.ondataavailable = async (event) => {
-        if (event.data.size > 0) {
-          recordedChunks.push(event.data);
-          
-          const arrayBuffer = await event.data.arrayBuffer();
-          socket.emit("videoChunk", arrayBuffer);
-        }
-      };
-
-      mediaRecorder.start(1000); // 1초마다 청크 전송
-      startRecordingBtn.style.display = "none";
-      stopRecordingBtn.style.display = "inline";
-    });
-
-    stopRecordingBtn.addEventListener("click", () => {
-      socket.emit("endRecording");
-      
-          axios.post('/live/update', {
-        islive: false,
-        playlistName
-      }).then(() => {
-        console.log('라이브 상태 false로 업데이트됨');
-      }).catch((err) => {
-        console.error('라이브 상태 업데이트 실패:', err);
-      });
-      
-      startRecordingBtn.style.display = "inline";
-      stopRecordingBtn.style.display = "none";
-      mediaRecorder.stop();
-        alert('중지')
-    });   
-
-
-    /////////////////////////////////////////////////////////////
-    
-    playButton.addEventListener('click', () => {
-      if (isPlaying) {
-        videoElement.pause();
-        playButton.innerHTML = '▶';
-      } else {
-        videoElement.play();
-        playButton.innerHTML = '⏸';
-      }
-      isPlaying = !isPlaying;
-    });
-
-    volumeSlider.addEventListener('input', function () {
-      videoElement.volume = this.value / 100;
-    });
-
-    // 채팅
-    const chatInput = document.querySelector('.chat-input input');
-    const chatButton = document.querySelector('.chat-input button');
-    const chatBox = document.getElementById('chat-box');
-
-    function sendMessage() {
-      const message = chatInput.value.trim();
-      if (message !== '') {
-        socket.emit('sendMessage', message); // 서버로만 보냄
-        chatInput.value = '';
-      }
-    }
-
-    chatButton.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', e => {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    socket.on('receiveMessage', function (message) {
-      // const { nickname, message } = data;
-      const x = Math.floor(Math.random() * (hostCanvas.width - 100)) + 50;
-      const y = hostCanvas.height - 30;
-      const dy = 0.5;   // 천천히 위로 이동
-      const alpha = 1;  // 완전 불투명하게 시작
-      // 말풍선 배열에 저장
-      chatBubbles.push({
-        text: message,
-        x: x,
-        y: y,
-        dy: dy,
-        alpha: alpha,
-        timestamp: Date.now()
-      });
-
-
-      // 오래된 메시지는 제거 (최대 5개 유지)
-      if (chatBubbles.length > 5) chatBubbles.shift();
-      const messageElement = document.createElement('div');
-      messageElement.className = 'chat-message';
-      messageElement.innerHTML = `
-      <div class="user-name">나</div>
-      <div class="message-text">${message}</div>
-      `;
-      console.log('받은 메시지:', message);
-      chatBox.appendChild(messageElement);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      if (chatBubbles.length > 10) chatBubbles.shift();
-    });
-
-    socket.on('updateUserList', (userList) => {
-  const userListDiv = document.querySelector('.user-list');
-  userListDiv.innerHTML = '';
-  userList.forEach(user => {
-    const userItem = document.createElement('div');
-    userItem.textContent = `👤 ${user}`;
-    userItem.className = 'user-item';
-    userListDiv.appendChild(userItem);
-  });
-});
-  </script>
+  <% } else { %>
+    <p>현재 녹화된 비디오가 없습니다.</p>
+  <% } %>
+</div>
+ 
 </body>
+<%- include('common/footer')%>
+<script src="/public/JS/liveSteaming.js"></script>
 </html>

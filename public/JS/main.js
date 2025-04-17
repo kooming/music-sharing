@@ -1,4 +1,3 @@
-// 🎵 요소 가져오기
 const musicForms = document.querySelectorAll('.music-form');
 const chartItems = document.querySelectorAll('.mini-chart-item');
 const likeButton = document.getElementById('like-button');
@@ -16,26 +15,24 @@ const playlistModal = document.getElementById('playlist-modal');
 const modalContent = document.getElementById('modal-content');
 
 
-let musicList = [];            // 전체 음악 리스트
+let musicList = [];            
 let currentMusicId = null;     
 let currentMusicIndex = null;  
-let history = [];              // 들은 곡 인덱스 저장
-let currentHistoryIndex = -1;  // history 안에서 현재 위치
+let history = [];              
+let currentHistoryIndex = -1;  
 
-// 🎵 시간 포맷 함수
 function formatTime(seconds) {
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
     return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
-// 볼륨바 조절
+
 audio.volume = 0.5;
 
 volumeBar.oninput = () => {
     audio.volume = volumeBar.value;
 };
 
-// 🎵 음악 업데이트
 function updateMusic(music) {
     document.getElementById('player-title').innerText = music.artist;
     document.getElementById('player-artist').innerText = music.songName;
@@ -47,10 +44,9 @@ function updateMusic(music) {
     playerBar.style.visibility = 'visible';
     playerBar.style.opacity = '1';
 
-    playPauseBtn.innerText = '⏸️'; // 재생 중 표시
+    playPauseBtn.innerText = '⏸️'; 
 }
 
-// 🎵 음악 카드 클릭
 musicForms.forEach((form) => {
     form.onclick = async (e) => {
         const id = e.currentTarget.dataset.id;
@@ -63,7 +59,7 @@ musicForms.forEach((form) => {
             musicList = serverMusicList;
             currentMusicId = id;
 
-            // 🎯 musicList 안에서 클릭한 음악 id를 찾아서 정확한 인덱스 저장
+            
             const foundIndex = musicList.findIndex(item => item.id === music.id);
             currentMusicIndex = foundIndex;
 
@@ -82,7 +78,6 @@ musicForms.forEach((form) => {
     };
 });
 
-// 🎵 미니차트 아이템 클릭
 chartItems.forEach((item) => {
     item.onclick = async (e) => {
         const id = e.currentTarget.dataset.id;
@@ -95,7 +90,7 @@ chartItems.forEach((item) => {
             musicList = serverMusicList;
             currentMusicId = id;
 
-            // 🎯 musicList 안에서 클릭한 음악 id를 찾아서 정확한 인덱스 저장
+            
             const foundIndex = musicList.findIndex(item => item.id === music.id);
             currentMusicIndex = foundIndex;
 
@@ -114,7 +109,6 @@ chartItems.forEach((item) => {
     };
 });
 
-// 🎵 좋아요 버튼 클릭
 likeButton.onclick = async () => {
     try {
         const response = await axios.post(`/music/${currentMusicId}/like`);
@@ -135,7 +129,6 @@ likeButton.onclick = async () => {
     }
 };
 
-// 🎵 재생/일시정지 버튼
 playPauseBtn.onclick = () => {
     if (audio.paused) {
         audio.play();
@@ -146,12 +139,10 @@ playPauseBtn.onclick = () => {
     }
 };
 
-// 🎵 SeekBar (진행바) 조작
 seekBar.oninput = () => {
     audio.currentTime = seekBar.value;
 };
 
-// 🎵 오디오 시간 업데이트
 audio.ontimeupdate = () => {
     seekBar.max = audio.duration || 0;
     seekBar.value = audio.currentTime || 0;
@@ -160,17 +151,14 @@ audio.ontimeupdate = () => {
     durationEl.innerText = formatTime(audio.duration);
 };
 
-// 🎵 오디오 끝나면 랜덤 셔플 재생
 audio.onended = () => {
     playRandomNext();
 };
 
-// 🎵 다음곡 버튼 클릭
 nextButton.onclick = () => {
     playRandomNext();
 };
 
-// 🎵 이전곡 버튼 클릭
 prevButton.onclick = async () => {
     if (currentHistoryIndex > 0) {
         currentHistoryIndex -= 1;
@@ -179,11 +167,11 @@ prevButton.onclick = async () => {
         updateMusic(prevMusic);
 
         try {
-            // 🎯 이전곡 좋아요 상태 다시 요청
+            
             const response = await axios.get(`/music/${prevMusic.id}/likecheck`);
             const { liked } = response.data;
 
-            currentMusicId = prevMusic.id; // 현재 재생곡 id 업데이트
+            currentMusicId = prevMusic.id; 
             if (liked) {
                 likeButton.innerText = '❤️';
             } else {
@@ -198,8 +186,6 @@ prevButton.onclick = async () => {
     }
 };
 
-
-// 🎵 랜덤 다음곡 함수
 async function playRandomNext() {
     
     
@@ -216,13 +202,10 @@ async function playRandomNext() {
     currentHistoryIndex = history.length - 1;
     
     try {
-        // 🎯 좋아요 상태 다시 요청
         const response = await axios.get(`/music/${nextMusic.id}/likecheck`);
         const { liked } = response.data;
+        currentMusicId = nextMusic.id; 
 
-        
-        // 🎯 좋아요 상태를 화면에 반영
-        currentMusicId = nextMusic.id; // 현재 재생곡 id 업데이트
         if (liked) {
             likeButton.innerText = '❤️';
         } else {
@@ -232,7 +215,7 @@ async function playRandomNext() {
         console.error('다음 곡 좋아요 상태 조회 실패:', error);
     }
 }
-// 🎯 + 버튼 누를 때 (모달 열기)
+
 plusBtn.onclick = async () => {
     try {
         const response = await axios.get('/music/playlist/list', {
@@ -256,7 +239,7 @@ plusBtn.onclick = async () => {
         playlistModal.style.display = 'flex';
         modalContent.innerHTML = '';
 
-        // 모달 상단 (제목 + 닫기 버튼)
+        
         const header = document.createElement('div');
         header.classList.add('modal-header');
 
@@ -280,7 +263,7 @@ plusBtn.onclick = async () => {
             item.innerText = playlist.playlistName;
             item.classList.add('playlist-item');
 
-            // 플레이 리스트 클릭 시 현재 노래 추가
+            
             item.onclick = async () => {
                 try {
                     await axios.post('/mypage/addSongToPlaylist', {
@@ -300,7 +283,7 @@ plusBtn.onclick = async () => {
             modalContent.appendChild(item);
         });
 
-        // 새 플레이 리스트 추가 버튼
+        
         const createNewPlaylistBtn = document.createElement('div');
         createNewPlaylistBtn.innerText = '+ 새 플레이 리스트 추가';
         createNewPlaylistBtn.classList.add('create-playlist-button');
@@ -316,13 +299,13 @@ plusBtn.onclick = async () => {
     }
 };
 
-// 🎯 새 플레이 리스트 만들기 버튼 (현재 음악을 바로 담기)
+
 createPlaylistBtn.onclick = async () => {
     const playlistName = document.getElementById('new-playlist-name').value.trim();
     document.getElementById('new-playlist-name').value = ""
     if (playlistName) {
         try {
-            const regex = /^[a-zA-Z0-9\s]+$/;
+            const regex = /^[a-zA-Z0-9\s가-힣ㄱ-ㅎㅏ-ㅣ]+$/;
             if(!regex.test(playlistName)) return showErrorAlert('특수문자를 제외해주세요.')
             await axios.post('/mypage/createPlaylist', {
                 playlistName: playlistName,
@@ -342,12 +325,12 @@ createPlaylistBtn.onclick = async () => {
     }
 };
 
-// 🎯 새 플레이 리스트 모달 취소 버튼
+
 document.getElementById('cancel-create-btn').onclick = () => {
     document.getElementById('new-playlist-name').value = ""
     document.getElementById('new-playlist-modal').style.display = 'none';
 };
-// 실패 알림
+
 function showErrorAlert(message) {
     const alertElement = document.createElement('div');
     alertElement.className = 'error-alert';
@@ -367,8 +350,7 @@ function showErrorAlert(message) {
     }, 3000);
   }
   
-  // 성공 알림 표시
-  function showSuccessAlert(message) {
+function showSuccessAlert(message) {
     const alertElement = document.createElement('div');
     alertElement.className = 'error-alert';
     alertElement.style.backgroundColor = '#4CAF50';

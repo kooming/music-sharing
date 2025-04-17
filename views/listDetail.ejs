@@ -17,7 +17,6 @@
         <span>NO</span>
         <span>곡 정보</span>
     </div>
-      
     <div class="all-music-container">
         <% musicList.forEach((music, index) => { %>
             <div class="music-item">
@@ -31,12 +30,8 @@
           </div>
         <% }); %>
       </div>
-<!-- 숨긴 오디오 -->
 <audio id="audio" src="" style="display: none;"></audio>
-
-<!-- 커스텀 플레이어 -->
 <div id="custom-player">
-  <!-- 왼쪽: 앨범 커버 + 노래 정보 -->
   <div class="player-left">
     <img id="player-img" src="" alt="앨범 커버">
     <div class="player-info">
@@ -44,8 +39,6 @@
       <div id="player-artist"></div>
     </div>
   </div>
-
-  <!-- 중앙: 재생버튼 + 진행바 + 현재시간/총시간 -->
   <div class="player-center">
     <div class="player-buttons">
       <button id="prev-btn">⏮️</button>
@@ -59,21 +52,17 @@
       </div>
     </div>
   </div>
-
-  <!-- 오른쪽: 좋아요 버튼 + 볼륨 + 메뉴 버튼 -->
   <div class="player-right">
     <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="0.5">
     <button id="like-button">🤍</button>
     <button id="plus-button">+</button>
   </div>
 </div>
-<!-- 모달창 기본 구조 추가 -->
 <div id="playlist-modal">
   <div id="modal-content">
     
   </div>
 </div>
-<!-- 새 재생목록 추가 모달 (숨김 기본) -->
 <div id="new-playlist-modal" class="playlist-modal" style="display: none;">
   <div id="new-playlist-content" class="playlist-modal-content">
     <h2>새 플레이리스트 만들기</h2>

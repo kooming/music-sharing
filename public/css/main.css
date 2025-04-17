@@ -6,16 +6,69 @@
   margin: 0;
 }
 
-/* 📦 메인 레이아웃 구역 */
+
 .content-form {
   display: flex;
 }
 
 .Streaming {
   width: 300px;
-  height: 88vh;
-  background-color: aquamarine;
-  margin: 30px 0 0 30px;
+  margin: 45px 0 0 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 30px 7px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.live-playlist {
+  background-color: #f0f8ff;
+  border: 1px solid #a1c4fd;
+  border-radius: 16px;
+  padding: 20px;
+  width: 200px;
+  height: 200px;
+  text-align: center;
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.live-playlist:hover {
+  transform: scale(1.05);
+}
+
+.live-playlist h3 {
+  margin: 10px 0 5px;
+  font-size: 1.2rem;
+}
+
+.live-playlist p {
+  color: #ff4500;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.live-playlist button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.live-playlist button:hover {
+  background-color: #45a049;
+}
+
+.live-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 10px;
 }
 
 .music {
@@ -38,10 +91,12 @@
   gap: 30px;
 }
 
-/* 🔐 로그인 영역 */
+
 .login, #mini-chart {
+  margin-top: 46px;
+  border-radius: 15px;
   width: 100%;
-  height: 50%;
+  height: 295px;
 }
 
 .login {
@@ -53,19 +108,132 @@
   flex-direction: column;
 }
 
-a .kakao-img {
-  width: 150px;
-  height: 150px;
+.img {
+  width: 400px;
+}
+.google {
+  border: 1px solid black;
+  box-sizing: border-box;
+  border-radius: 7px;
+}
+.login-img{
+  width: 50px;
+  border-radius: 50%;
 }
 
 .login-form, .logout-form {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 14px;
 }
 
-/* 📈 미니 인기차트 */
+.logout-form.login-active {
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  display: flex;
+  flex-direction: row;
+}
+
+.logout-form.login-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/public/images/profile_background.png') no-repeat center center;
+  background-size: cover;
+  filter: blur(0.5px);
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.logout-form.login-active > * {
+  position: relative;
+  z-index: 1;
+}
+
+.logout-form .card {
+  width: 220px;
+  height: 240px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  box-shadow: 5px 7px 15px -6px black;
+}
+
+.logout-form .list {
+  width: 220px;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+
+.logout-form .list div {
+  width: 220px;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding-left: 20px;
+  box-sizing: border-box;
+  color: #ffffff;
+  font-weight: bold;
+  background-color: rgba(189, 192, 255, 0.6);
+  border-radius: 20px;
+}
+
+.logout-form .card:last-child {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.logout-form .card:last-child::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/public/images/profile_card.png') no-repeat center center;
+  background-size: cover;
+  opacity: 0.8;
+  z-index: -1;
+}
+
+.logout-form .card .profile_wrap {
+  position: absolute;
+  width: 50px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.logout-form .card .profile_wrap div {
+  word-break: keep-all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.profile_wrap div #title {
+  font-weight: bold;
+  color: rgba(189, 192, 255, 0.6);
+  text-shadow: 1px 3px 10px rgba(46, 48, 90, 0.6);
+  font-size: 24px;
+  margin: 6px 0 8px 0;
+}
+
 #mini-chart {
   position: fixed;
   right: 20px;
@@ -102,7 +270,7 @@ a .kakao-img {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 📋 최신가요 + 전체곡 보기 버튼 */
+
 .music-move {
   display: flex;
   align-items: center;
@@ -129,7 +297,7 @@ a .kakao-img {
   text-decoration: underline;
 }
 
-/* 🎵 음악 카드 (music-form) */
+
 .music-form {
   width: 220px;
   height: 235px;
@@ -157,7 +325,7 @@ a .kakao-img {
   border-radius: 8px;
 }
 
-/* music-form 내부 텍스트 줄바꿈 방지 + 말줄임표 처리 */
+
 .music-form div {
   width: 100%;
   text-align: center;
@@ -165,5 +333,5 @@ a .kakao-img {
   margin-top: 5px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap; /* 한 줄로 유지 */
+  white-space: nowrap; 
 }
